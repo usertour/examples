@@ -78,8 +78,16 @@ services:
       # Web api url
       - API_URL=
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:80/api/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: always
 
   postgres:
@@ -90,12 +98,24 @@ services:
       - POSTGRES_DB=usertour
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: always
 
   redis:
     image: redis:alpine
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: always
 
 volumes:
